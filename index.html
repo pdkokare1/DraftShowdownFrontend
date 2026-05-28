@@ -49,9 +49,9 @@
 
     <div id="screen-game" class="screen" style="padding:0; justify-content: flex-start;">
         <div class="hud">
-            <div id="hud-p1">You: <span class="hp-bar" id="p1-hp">♥♥♥</span></div>
+            <div id="hud-p1">You: <span class="hp-bar" id="p1-hp">♥♥•</span></div>
             <div id="hud-round" style="color:#f1c40f">ROUND 1</div>
-            <div id="hud-p2">Enemy: <span class="hp-bar" id="p2-hp">♥♥♥</span></div>
+            <div id="hud-p2">Enemy: <span class="hp-bar" id="p2-hp">♥♥•</span></div>
         </div>
         
         <div id="draft-view" style="width:100%; padding:20px; display:flex; flex-direction:column; flex:1;">
@@ -70,8 +70,8 @@
 </div>
 
 <script>
-    // CRITICAL: Replace this string with your live Railway URL path.
-    const SERVER_URL = "https://your-railway-backend-url.up.railway.app";
+    // Successfully configured to point directly to your live Railway server
+    const SERVER_URL = "https://draftshowdownbackend-production.up.railway.app";
     const socket = io(SERVER_URL);
 
     let currentRoomId = null;
@@ -105,7 +105,7 @@
         document.getElementById('p1-hp').innerText = "♥".repeat(data.p1.id === myId ? data.p1.hp : data.p2.hp);
         document.getElementById('p2-hp').innerText = "♥".repeat(data.p1.id === myId ? data.p2.hp : data.p1.hp);
 
-        // Render card options selectively depending on which player assignment you are
+        // Render card options selectively depending on player assignment
         const optionsBox = document.getElementById('options-box');
         optionsBox.innerHTML = '';
         const myOptions = data.p1.id === myId ? data.options.p1Options : data.options.p2Options;
