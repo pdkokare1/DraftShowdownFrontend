@@ -6,78 +6,180 @@
     <title>Draft Showdown Mobile</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background: #121214; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        #app { width: 100%; max-width: 450px; height: 100vh; background: #1a1a1e; display: flex; flex-direction: column; position: relative; border-left: 1px solid #2a2a30; border-right: 1px solid #2a2a30; }
-        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; justify-content: center; align-items: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Rounded MT Bold', -apple-system, BlinkMacSystemFont, sans-serif; user-select: none; }
+        body { background: #0b0c10; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        
+        #app { 
+            width: 100%; 
+            max-width: 430px; 
+            height: 100vh; 
+            background: linear-gradient(180deg, #1f242d 0%, #11141a 100%); 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* LOBBY STYLE */
+        .screen { display: none; flex-direction: column; height: 100%; padding: 25px; justify-content: center; align-items: center; }
         .screen.active { display: flex; }
         
-        /* Typography & Utilities */
-        h1 { color: #f39c12; margin-bottom: 10px; font-size: 28px; text-transform: uppercase; letter-spacing: 1px; }
-        input { width: 85%; padding: 15px; border-radius: 8px; border: none; background: #2c2c35; color: #fff; margin-bottom: 15px; font-size: 16px; text-align: center; }
-        button { width: 85%; padding: 15px; border-radius: 8px; border: none; background: #e67e22; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #d35400; }
-
-        /* HUD Header */
-        .hud { display: flex; justify-content: space-between; width: 100%; padding: 15px; background: #25252b; border-bottom: 2px solid #32323d; font-weight: bold; font-size: 14px; }
-        .hp-bar { color: #e74c3c; }
-
-        /* Grid Draft Options Layout */
-        .draft-container { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; gap: 20px; }
-        .card-option { background: #2d3436; border: 2px solid #e67e22; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; transform: scale(1); transition: 0.2s; }
-        .card-option:active { transform: scale(0.95); }
-        .card-icon { font-size: 48px; margin-bottom: 10px; }
-        .card-stats { font-size: 13px; color: #b2bec3; margin-top: 5px; }
-
-        /* Arena Battle Log View viewport */
-        .arena { flex: 1; width: 100%; overflow-y: auto; background: #111; border-radius: 8px; padding: 15px; margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
-        .log-line { font-size: 14px; background: #222; padding: 8px; border-radius: 4px; border-left: 4px solid #e67e22; animation: slideIn 0.3s ease-out forwards; }
+        .game-title { font-size: 36px; font-weight: 900; color: #f39c12; text-shadow: 0 4px 10px rgba(243, 156, 18, 0.4); text-transform: uppercase; margin-bottom: 5px; text-align: center; }
+        .game-subtitle { font-size: 14px; color: #6c7a89; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
         
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .waiting-text { font-style: italic; color: #aaa; text-align: center; }
+        input { width: 90%; padding: 18px; border-radius: 12px; border: 2px solid #2c3540; background: #1c222b; color: #fff; margin-bottom: 20px; font-size: 18px; text-align: center; font-weight: bold; outline: none; transition: 0.3s; }
+        input:focus { border-color: #f39c12; box-shadow: 0 0 15px rgba(243,156,18,0.2); }
+        
+        .action-btn { width: 90%; padding: 18px; border-radius: 12px; border: none; background: linear-gradient(135deg, #f39c12 0%, #d35400 100%); color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(211,84,0,0.4); transition: 0.2s; }
+        .action-btn:active { transform: scale(0.98); box-shadow: 0 2px 5px rgba(211,84,0,0.4); }
+
+        /* HUD TOP PANEL */
+        .hud { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 15px 20px; background: #161a22; border-bottom: 3px solid #242b35; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .hud-player { display: flex; flex-direction: column; font-size: 14px; font-weight: bold; }
+        .hud-player.enemy { align-items: flex-end; }
+        .hp-hearts { color: #ff3838; font-size: 18px; margin-top: 3px; letter-spacing: 2px; text-shadow: 0 0 8px rgba(255,56,56,0.4); }
+        .round-tag { background: #f1c40f; color: #000; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 900; box-shadow: 0 0 10px rgba(241,196,15,0.3); }
+
+        /* DRAFT BOARD SCREEN */
+        .draft-title { font-size: 20px; color: #bdc3c7; margin: 30px 0 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .draft-container { flex: 1; display: flex; flex-direction: column; width: 100%; gap: 15px; padding: 10px 5px; justify-content: center; }
+        
+        /* THE VISUAL CARDS */
+        .card-option { 
+            background: linear-gradient(145deg, #232b38 0%, #1a1f29 100%); 
+            border: 2px solid #3a4659; 
+            border-radius: 16px; 
+            padding: 16px; 
+            display: flex; 
+            align-items: center; 
+            position: relative; 
+            cursor: pointer; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4); 
+            transition: 0.2s ease;
+        }
+        .card-option:hover { border-color: #f39c12; transform: translateY(-2px); }
+        .card-option:active { transform: scale(0.97); }
+        
+        .card-badge { font-size: 42px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; margin-right: 15px; display: flex; justify-content: center; align-items: center; width: 65px; height: 65px; }
+        .card-info { flex: 1; display: flex; flex-direction: column; }
+        .card-name { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 6px; }
+        .card-stats-row { display: flex; gap: 12px; }
+        .stat-capsule { background: #14181f; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; color: #a5b1c2; display: flex; align-items: center; gap: 3px; }
+        .stat-capsule.hp { color: #ff4757; }
+        .stat-capsule.atk { color: #ffa502; }
+        .stat-capsule.spd { color: #1e90ff; }
+
+        /* VISUAL ARENA SHOWDOWN */
+        .battle-arena-wrapper { flex: 1; width: 100%; display: flex; flex-direction: column; padding: 15px; justify-content: space-between; }
+        .battle-zone { width: 100%; height: 44%; background: rgba(0,0,0,0.3); border: 2px dashed #2c3540; border-radius: 16px; display: flex; justify-content: center; align-items: center; gap: 12px; position: relative; padding: 10px; }
+        .battle-zone.enemy-side { background: linear-gradient(180deg, rgba(235, 94, 85, 0.08) 0%, transparent 100%); border-color: rgba(235, 94, 85, 0.2); }
+        .battle-zone.player-side { background: linear-gradient(0deg, rgba(52, 152, 219, 0.08) 0%, transparent 100%); border-color: rgba(52, 152, 219, 0.2); }
+        
+        .vs-divider { height: 4px; width: 60%; background: linear-gradient(90deg, transparent, #e74c3c, #3498db, transparent); margin: 10px auto; opacity: 0.6; }
+
+        /* MINIFIED BOARD DEPLOYED CARDS */
+        .deployed-card {
+            background: #232b38;
+            border: 2px solid #3498db;
+            border-radius: 12px;
+            width: 75px;
+            height: 95px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            font-size: 28px;
+            transition: transform 0.15s ease-in-out;
+        }
+        .enemy-side .deployed-card { border-color: #e74c3c; }
+        
+        .mini-hp-badge {
+            position: absolute;
+            bottom: -6px;
+            background: #ff4757;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* ANIMATIONS FOR BATTLE COMBAT */
+        .hit-shake { animation: shake 0.25s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .damage-pop {
+            position: absolute;
+            color: #ff3838;
+            font-size: 24px;
+            font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 10;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+        }
+
+        .waiting-text { font-style: italic; color: #57606f; text-align: center; font-size: 15px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div id="screen-lobby" class="screen active">
-        <h1>Draft Showdown</h1>
-        <input type="text" id="username-input" placeholder="Enter Nickname..." maxlength="12">
-        <button id="join-btn">FIND MATCH</button>
-        <p id="lobby-status" class="waiting-text" style="margin-top: 15px;"></p>
+        <div class="game-title">Draft Showdown</div>
+        <div class="game-subtitle">Mobile Arena Arena</div>
+        <input type="text" id="username-input" placeholder="Enter Player Name..." maxlength="12">
+        <button id="join-btn" class="action-btn">FIND CHALLENGER</button>
+        <p id="lobby-status" class="waiting-text"></p>
     </div>
 
     <div id="screen-game" class="screen" style="padding:0; justify-content: flex-start;">
         <div class="hud">
-            <div id="hud-p1">You: <span class="hp-bar" id="p1-hp">♥♥•</span></div>
-            <div id="hud-round" style="color:#f1c40f">ROUND 1</div>
-            <div id="hud-p2">Enemy: <span class="hp-bar" id="p2-hp">♥♥•</span></div>
+            <div class="hud-player">
+                <span id="p1-name" style="color: #3498db">YOU</span>
+                <div class="hp-hearts" id="p1-hp">♥♥♥</div>
+            </div>
+            <div class="round-tag" id="hud-round">ROUND 1</div>
+            <div class="hud-player enemy">
+                <span id="p2-name" style="color: #e74c3c">OPPONENT</span>
+                <div class="hp-hearts" id="p2-hp">♥♥♥</div>
+            </div>
         </div>
         
-        <div id="draft-view" style="width:100%; padding:20px; display:flex; flex-direction:column; flex:1;">
-            <h3 style="text-align:center; margin-bottom:15px; color:#bdc3c7;">Pick Your Unit</h3>
+        <div id="draft-view" style="width:100%; padding:20px; display:flex; flex-direction:column; flex:1; align-items:center;">
+            <div class="draft-title">Pick Your Next Unit</div>
             <div class="draft-container" id="options-box">
                 </div>
-            <p id="draft-waiting" class="waiting-text" style="display:none; margin-top:20px;">Waiting for opponent to select...</p>
+            <p id="draft-waiting" class="waiting-text" style="display:none; color: #f1c40f;">Waiting for your opponent's pick...</p>
         </div>
 
-        <div id="battle-view" style="width:100%; padding:20px; display:none; flex-direction:column; flex:1;">
-            <h3 style="text-align:center; color:#e74c3c;">COMBAT ACTION SHOWDOWN</h3>
-            <div class="arena" id="arena-log">
-                </div>
+        <div id="battle-view" class="battle-arena-wrapper" style="display:none;">
+            <div class="battle-zone enemy-side" id="enemy-battle-zone"></div>
+            
+            <div class="vs-divider"></div>
+            
+            <div class="battle-zone player-side" id="player-battle-zone"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // Successfully configured to point directly to your live Railway server
     const SERVER_URL = "https://draftshowdownbackend-production.up.railway.app";
     const socket = io(SERVER_URL);
 
     let currentRoomId = null;
     let myId = null;
 
-    // Elements
     const btnJoin = document.getElementById('join-btn');
     const inputUsername = document.getElementById('username-input');
     const lobbyStatus = document.getElementById('lobby-status');
@@ -86,9 +188,10 @@
     
     btnJoin.addEventListener('click', () => {
         const name = inputUsername.value.trim();
+        if(!name) return alert("Please type a name first!");
         socket.emit('joinMatchmaking', name);
         btnJoin.disabled = true;
-        lobbyStatus.innerText = "Finding an available challenger...";
+        lobbyStatus.innerText = "Connecting to matchmaking server room...";
     });
 
     socket.on('connect', () => { myId = socket.id; });
@@ -102,10 +205,12 @@
         document.getElementById('draft-waiting').style.display = 'none';
         
         document.getElementById('hud-round').innerText = `ROUND ${data.round}`;
+        document.getElementById('p1-name').innerText = data.p1.id === myId ? data.p1.name : data.p2.name;
+        document.getElementById('p2-name').innerText = data.p1.id === myId ? data.p2.name : data.p1.name;
         document.getElementById('p1-hp').innerText = "♥".repeat(data.p1.id === myId ? data.p1.hp : data.p2.hp);
         document.getElementById('p2-hp').innerText = "♥".repeat(data.p1.id === myId ? data.p2.hp : data.p1.hp);
 
-        // Render card options selectively depending on player assignment
+        // Render card selections completely styled as graphic interface modules
         const optionsBox = document.getElementById('options-box');
         optionsBox.innerHTML = '';
         const myOptions = data.p1.id === myId ? data.options.p1Options : data.options.p2Options;
@@ -114,9 +219,15 @@
             const cardEl = document.createElement('div');
             cardEl.className = 'card-option';
             cardEl.innerHTML = `
-                <div class="card-icon">${card.icon}</div>
-                <strong>${card.name}</strong>
-                <div class="card-stats">HP: ${card.hp} | ATK: ${card.atk} | SPD: ${card.spd}</div>
+                <div class="card-badge">${card.icon}</div>
+                <div class="card-info">
+                    <span class="card-name">${card.name}</span>
+                    <div class="card-stats-row">
+                        <div class="stat-capsule hp">❤️ ${card.hp}</div>
+                        <div class="stat-capsule atk">⚔️ ${card.atk}</div>
+                        <div class="stat-capsule spd">⚡ ${card.spd}</div>
+                    </div>
+                </div>
             `;
             cardEl.addEventListener('click', () => {
                 socket.emit('pickCard', { roomId: currentRoomId, cardId: card.id });
@@ -125,7 +236,24 @@
             });
             optionsBox.appendChild(cardEl);
         });
+
+        // Spawn draft setup structures silently to the background layout grid
+        setupVisualArenaDecks(data.p1.id === myId ? data.p1.deck : data.p2.deck, data.p1.id === myId ? data.p2.deck : data.p1.deck);
     });
+
+    function setupVisualArenaDecks(myDeck, opponentDeck) {
+        const playerZone = document.getElementById('player-battle-zone');
+        const enemyZone = document.getElementById('enemy-battle-zone');
+        playerZone.innerHTML = '';
+        enemyZone.innerHTML = '';
+
+        myDeck.forEach((card, i) => {
+            playerZone.innerHTML += `<div class="deployed-card" id="my-card-${i}">${card.icon}<div class="mini-hp-badge" id="my-card-hp-${i}">${card.hp}</div></div>`;
+        });
+        opponentDeck.forEach((card, i) => {
+            enemyZone.innerHTML += `<div class="deployed-card" id="enemy-card-${i}">${card.icon}<div class="mini-hp-badge" id="enemy-card-hp-${i}">${card.hp}</div></div>`;
+        });
+    }
 
     socket.on('playerPicked', (data) => {
         if(data.playerId === myId) {
@@ -136,33 +264,65 @@
     socket.on('battleResults', (data) => {
         document.getElementById('draft-view').style.display = 'none';
         document.getElementById('battle-view').style.display = 'flex';
+
+        // Re-read structural layout to sync IDs properly during animation frames
+        let logIndex = 0;
         
-        const arenaLog = document.getElementById('arena-log');
-        arenaLog.innerHTML = '';
+        function playNextCombatFrame() {
+            if (logIndex >= data.log.length) {
+                // End sequence updates health statuses visually
+                document.getElementById('p1-hp').innerText = "♥".repeat(socket.id === myId ? data.p1Hp : data.p2Hp);
+                document.getElementById('p2-hp').innerText = "♥".repeat(socket.id === myId ? data.p2Hp : data.p1Hp);
+                return;
+            }
 
-        // Animate combat frames step by step
-        data.log.forEach((line, index) => {
-            setTimeout(() => {
-                const p = document.createElement('div');
-                p.className = 'log-line';
-                p.innerText = line.text;
-                arenaLog.appendChild(p);
-                arenaLog.scrollTop = arenaLog.scrollHeight;
-            }, index * 600);
-        });
+            const logLine = data.log[logIndex].text;
+            
+            // Check strings to extract targeting tags for visual burst calculations
+            let targetCardEl = null;
+            let damageMatch = logLine.match(/for (\d+) DMG/);
+            
+            if (logLine.includes("Enemy")) {
+                // Target is on enemy side of the layout field
+                let cards = document.querySelectorAll('#enemy-battle-zone .deployed-card');
+                if (cards.length > 0) targetCardEl = cards[0];
+            } else if (logLine.includes("Your")) {
+                // Target is on your personal home-court side
+                let cards = document.querySelectorAll('#player-battle-zone .deployed-card');
+                if (cards.length > 0) targetCardEl = cards[0];
+            }
 
-        // Update health parameters at the completion of animation streams
-        setTimeout(() => {
-            document.getElementById('p1-hp').innerText = "♥".repeat(socket.id === myId ? data.p1Hp : data.p2Hp);
-            document.getElementById('p2-hp').innerText = "♥".repeat(socket.id === myId ? data.p2Hp : data.p1Hp);
-        }, data.log.length * 600);
+            if (targetCardEl && damageMatch) {
+                let damageAmount = damageMatch[1];
+                
+                // Trigger structural damage animations
+                targetCardEl.classList.add('hit-shake');
+                setTimeout(() => targetCardEl.classList.remove('hit-shake'), 250);
+
+                // Spawn floating popup numbers onto matching elements
+                let pop = document.createElement('div');
+                pop.className = 'damage-pop';
+                pop.innerText = `-${damageAmount}`;
+                targetCardEl.appendChild(pop);
+
+                // Check text tags to delete node segments matching fatal indicators
+                if (logLine.includes("fell in combat")) {
+                    setTimeout(() => { targetCardEl.style.opacity = '0.2'; }, 300);
+                }
+            }
+
+            logIndex++;
+            setTimeout(playNextCombatFrame, 800);
+        }
+
+        setTimeout(playNextCombatFrame, 500);
     });
 
     socket.on('gameOver', (data) => {
         setTimeout(() => {
-            alert(`MATCH OVER! Winner is: ${data.winner}`);
+            alert(`🏆 MATCH CHAMPION: ${data.winner}`);
             window.location.reload();
-        }, 4000);
+        }, 3000);
     });
 </script>
 </body>
